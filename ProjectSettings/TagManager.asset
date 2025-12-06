@@ -14,7 +14,7 @@ TagManager:
   - 
   - Water
   - UI
-  - 
+  - Player
   - 
   - 
   - 
@@ -76,6 +76,9 @@ TagManager:
     locked: 0
   - name: Tree
     uniqueID: 3610664245
+    locked: 0
+  - name: Player
+    uniqueID: 3705837683
     locked: 0
   m_RenderingLayers:
   - Default

@@ -1,5 +1,6 @@
-﻿using UnityEngine;
-using TMPro;  // Nếu dùng TextMeshPro
+﻿using TMPro;  // Nếu dùng TextMeshPro
+using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class LoginUI : MonoBehaviour
@@ -15,7 +16,7 @@ public class LoginUI : MonoBehaviour
         loginButton.onClick.AddListener(OnLoginClicked);
     }
 
-    void OnLoginClicked()
+    public void OnLoginClicked()
     {
         string email = emailInput.text;
         string password = passwordInput.text;
@@ -25,7 +26,10 @@ public class LoginUI : MonoBehaviour
             Debug.LogWarning("Vui lòng nhập đầy đủ email và mật khẩu!");
             return;
         }
-
-        tcpClientManager.LoginAccount(email, password);
+        else
+        {
+            SceneManager.LoadScene("selectcharacter");
+        }
+            tcpClientManager.LoginAccount(email, password);
     }
 }
