@@ -65,6 +65,12 @@ TagManager:
   - name: Tile
     uniqueID: 2607224765
     locked: 0
+  - name: Bench
+    uniqueID: 2964181347
+    locked: 0
+  - name: Player
+    uniqueID: 3705837683
+    locked: 0
   - name: Fence
     uniqueID: 3396252959
     locked: 0
@@ -76,9 +82,6 @@ TagManager:
     locked: 0
   - name: Tree
     uniqueID: 3610664245
-    locked: 0
-  - name: Player
-    uniqueID: 3705837683
     locked: 0
   m_RenderingLayers:
   - Default

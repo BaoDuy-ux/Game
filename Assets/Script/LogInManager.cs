@@ -30,6 +30,6 @@ public class LoginUI : MonoBehaviour
         {
             SceneManager.LoadScene("selectcharacter");
         }
-            tcpClientManager.LoginAccount(email, password);
+        tcpClientManager.LoginAccount(email, password);
     }
 }
