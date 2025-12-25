@@ -58,7 +58,7 @@ public class RegisterUI : MonoBehaviour
         if (tcpManager != null)
         {
             ShowMessage("⏳ Đang gửi dữ liệu...");
-            StartCoroutine(RegisterAndShowResult(email, password));
+            tcpManager.RegisterAccount(email, password);
         }
         else
         {
