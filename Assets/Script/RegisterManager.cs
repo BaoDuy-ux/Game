@@ -28,6 +28,20 @@ public class RegisterUI : MonoBehaviour
             return;
         }
 
+        // Kiểm tra định dạng email (Gmail)
+        if (!IsValidEmail(email))
+        {
+            ShowMessage("Email không hợp lệ! Vui lòng nhập đúng định dạng email (ví dụ: user@gmail.com)");
+            return;
+        }
+
+        // Kiểm tra độ dài password
+        if (password.Length < 6)
+        {
+            ShowMessage("Mật khẩu phải có ít nhất 6 ký tự!");
+            return;
+        }
+
         // Kiểm tra xác nhận mật khẩu
         if (password != confirm)
         {
@@ -44,11 +58,62 @@ public class RegisterUI : MonoBehaviour
         if (tcpManager != null)
         {
             ShowMessage("⏳ Đang gửi dữ liệu...");
-            tcpManager.RegisterAccount(email, password);
+            StartCoroutine(RegisterAndShowResult(email, password));
         }
         else
         {
             ShowMessage("❌ Không tìm thấy TcpClientManager trong scene!");
+        }
+    }
+
+    // Kiểm tra email hợp lệ
+    private bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    void Start()
+    {
+        // Tìm TcpClientManager nếu chưa gán
+        if (tcpManager == null)
+        {
+            tcpManager = FindObjectOfType<TcpClientManager>();
+        }
+        
+        // Đăng ký lắng nghe kết quả đăng ký
+        if (tcpManager != null)
+        {
+            tcpManager.OnRegisterResult += HandleRegisterResult;
+        }
+    }
+
+    void OnDestroy()
+    {
+        // Hủy đăng ký khi object bị destroy
+        if (tcpManager != null)
+        {
+            tcpManager.OnRegisterResult -= HandleRegisterResult;
+        }
+    }
+
+    // Xử lý kết quả đăng ký
+    private void HandleRegisterResult(string message, bool success)
+    {
+        if (success)
+        {
+            ShowMessage("✅ " + message);
+        }
+        else
+        {
+            ShowMessage("❌ " + message);
         }
     }
 

@@ -1,112 +1,179 @@
-﻿using UnityEngine;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
+﻿// Updated: HTTP API connection
+using UnityEngine;
+using UnityEngine.Networking;
+using System.Collections;
 
 [System.Serializable]
 public class RegisterData
 {
-    public string type = "register";
     public string email;
     public string password;
 }
+
+[System.Serializable]
 public class LoginData
 {
-    public string type = "login";
     public string email;
     public string password;
+}
+
+[System.Serializable]
+public class ApiResponse
+{
+    public string status;
+    public string message;
+    public int userId;
 }
 
 public class TcpClientManager : MonoBehaviour
 {
-    public string serverIP = "127.0.0.1";
-    public int serverPort = 5000;
+    public string serverURL = "http://localhost:5000";
+    
+    // Event để UI có thể lắng nghe kết quả
+    public System.Action<string, bool> OnRegisterResult; // message, success
+    public System.Action<string, int?> OnLoginResult; // message, userId (null nếu lỗi)
 
-    public async void RegisterAccount(string email, string password)
+    public void RegisterAccount(string email, string password)
     {
-        TcpClient client = null;
-
-        try
-        {
-            client = new TcpClient();
-            await client.ConnectAsync(serverIP, serverPort);
-            NetworkStream stream = client.GetStream();
-
-            // Chuẩn bị JSON
-            RegisterData data = new RegisterData
-            {
-                email = email,
-                password = password
-            };
-
-            string json = JsonUtility.ToJson(data) + "\n"; // Thêm newline để server biết kết thúc
-            byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
-            await stream.WriteAsync(bytesToSend, 0, bytesToSend.Length);
-
-            // Nhận phản hồi
-            byte[] buffer = new byte[1024];
-            int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
-            string response = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-
-            Debug.Log($"Server response: {response}");
-
-            stream.Close();
-            client.Close();
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"Lỗi kết nối: {ex.Message}");
-            client?.Close();
-        }
+        StartCoroutine(RegisterCoroutine(email, password));
     }
-    public async void LoginAccount(string email, string password)
+
+    IEnumerator RegisterCoroutine(string email, string password)
     {
-        TcpClient client = null;
-
-        try
+        string url = serverURL + "/api/auth/register";
+        
+        RegisterData data = new RegisterData
         {
-            client = new TcpClient();
-            await client.ConnectAsync(serverIP, serverPort);
-            NetworkStream stream = client.GetStream();
+            email = email,
+            password = password
+        };
 
-            // Chuẩn bị dữ liệu JSON
-            LoginData data = new LoginData
-            {
-                email = email,
-                password = password
-            };
+        string json = JsonUtility.ToJson(data);
+        Debug.Log("[Register] URL: " + url);
+        Debug.Log("[Register] JSON gửi đi: " + json);
+        
+        UnityWebRequest request = new UnityWebRequest(url, "POST");
+        byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
+        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Content-Type", "application/json");
+        
+        yield return request.SendWebRequest();
 
-            string json = JsonUtility.ToJson(data) + "\n"; // Thêm newline để server nhận biết
-            byte[] bytesToSend = Encoding.UTF8.GetBytes(json);
-            await stream.WriteAsync(bytesToSend, 0, bytesToSend.Length);
+        Debug.Log("[Register] Response Code: " + request.responseCode);
+        Debug.Log("[Register] Response: " + request.downloadHandler.text);
 
-            // Nhận phản hồi từ server
-            byte[] buffer = new byte[1024];
-            int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
-            string response = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-
-            Debug.Log($"Server response: {response}");
-
-            // Xử lý kết quả từ server (giả sử server trả về JSON kiểu {"status":"success"} )
-            if (response.Contains("success"))
-            {
-                Debug.Log("Đăng nhập thành công!");
-                // TODO: Chuyển scene hoặc hiện thông báo thành công
-            }
-            else
-            {
-                Debug.LogWarning("Sai tài khoản hoặc mật khẩu!");
-                // TODO: Hiện thông báo lỗi
-            }
-
-            stream.Close();
-            client.Close();
-        }
-        catch (System.Exception ex)
+        if (request.result == UnityWebRequest.Result.Success && request.responseCode == 200)
         {
-            Debug.LogError($"Lỗi kết nối: {ex.Message}");
-            client?.Close();
+            string response = request.downloadHandler.text;
+            Debug.Log("✅ Server response: " + response);
+            
+            try
+            {
+                ApiResponse apiResponse = JsonUtility.FromJson<ApiResponse>(response);
+                if (apiResponse.status == "success")
+                {
+                    Debug.Log("✅ Đăng ký thành công!");
+                    OnRegisterResult?.Invoke(apiResponse.message, true);
+                }
+                else
+                {
+                    Debug.LogWarning("❌ " + apiResponse.message);
+                    OnRegisterResult?.Invoke(apiResponse.message, false);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError("Lỗi parse JSON: " + ex.Message);
+                OnRegisterResult?.Invoke("Lỗi xử lý phản hồi từ server", false);
+            }
         }
-    }    
+        else
+        {
+            string errorMsg = "Lỗi kết nối server";
+            if (!string.IsNullOrEmpty(request.downloadHandler.text))
+            {
+                try
+                {
+                    ApiResponse errorResponse = JsonUtility.FromJson<ApiResponse>(request.downloadHandler.text);
+                    errorMsg = errorResponse.message;
+                }
+                catch { }
+            }
+            Debug.LogError("❌ Lỗi: " + request.error);
+            Debug.LogError("Response Code: " + request.responseCode);
+            Debug.LogError("Response Body: " + request.downloadHandler.text);
+            OnRegisterResult?.Invoke(errorMsg, false);
+        }
+        
+        request.Dispose();
+    }
+
+    public void LoginAccount(string email, string password)
+    {
+        StartCoroutine(LoginCoroutine(email, password));
+    }
+
+    IEnumerator LoginCoroutine(string email, string password)
+    {
+        string url = serverURL + "/api/auth/login";
+        
+        LoginData data = new LoginData
+        {
+            email = email,
+            password = password
+        };
+
+        string json = JsonUtility.ToJson(data);
+        Debug.Log("[Login] URL: " + url);
+        Debug.Log("[Login] JSON gửi đi: " + json);
+        
+        UnityWebRequest request = new UnityWebRequest(url, "POST");
+        byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
+        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Content-Type", "application/json");
+        
+        yield return request.SendWebRequest();
+
+        Debug.Log("[Login] Response Code: " + request.responseCode);
+        Debug.Log("[Login] Response: " + request.downloadHandler.text);
+
+        if (request.result == UnityWebRequest.Result.Success && request.responseCode == 200)
+        {
+            string response = request.downloadHandler.text;
+            Debug.Log("✅ Server response: " + response);
+            
+            try
+            {
+                ApiResponse apiResponse = JsonUtility.FromJson<ApiResponse>(response);
+                if (apiResponse.status == "success")
+                {
+                    Debug.Log("✅ Đăng nhập thành công! UserID: " + apiResponse.userId);
+                    // Lưu userId để dùng sau
+                    PlayerPrefs.SetInt("UserId", apiResponse.userId);
+                    PlayerPrefs.Save();
+                    OnLoginResult?.Invoke(apiResponse.message, apiResponse.userId);
+                }
+                else
+                {
+                    Debug.LogWarning("❌ " + apiResponse.message);
+                    OnLoginResult?.Invoke(apiResponse.message, null);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError("Lỗi parse JSON: " + ex.Message);
+            }
+        }
+        else
+        {
+            Debug.LogError("❌ Lỗi: " + request.error);
+            Debug.LogError("Response Code: " + request.responseCode);
+            Debug.LogError("Response Body: " + request.downloadHandler.text);
+        }
+        
+        request.Dispose();
+    }
 }
 
