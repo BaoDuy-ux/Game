@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 5979695884473351564}
   m_Layer: 0
   m_Name: Peter
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -78,7 +78,7 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: -589129613
-  m_SortingLayer: 11
+  m_SortingLayer: 8
   m_SortingOrder: 0
   m_Sprite: {fileID: 4165662180156050046, guid: 21e0f7ed9e28a654e9aaf2339c899dbc, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -198,4 +198,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2ea2c2f791368049890b9d35d40f8de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movespeed: 5
+  movespeed: 6

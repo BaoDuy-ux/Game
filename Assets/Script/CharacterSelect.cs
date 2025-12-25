@@ -10,11 +10,11 @@ public class CharacterSelect : MonoBehaviour
     [SerializeField] TextMeshProUGUI characterName;
 
     [SerializeField] GameObject[] characterPrefabs;
-    public static GameObject slectedCharacter; 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    public static GameObject selectedCharacter; 
+
     void Start()
     {
-      index = 0;
+        index = 0;
         SelectCharacter();
     }
     public void PlayBtnClick()
@@ -38,24 +38,26 @@ public class CharacterSelect : MonoBehaviour
         }
         SelectCharacter();
     }
-        private void SelectCharacter()
+    private void SelectCharacter()
+    {
+        for(int i=0; i< characters.Length; i++)
         {
-            for(int i=0; i< characters.Length; i++)
+            if (i == index)
             {
-                if (i == index)
-                {
-                    characters[i].GetComponent<SpriteRenderer>().color = Color.white;
-                    characters[i].GetComponent<Animator>().enabled = true;
-                    slectedCharacter = characterPrefabs[i];
-                    characterName.text = characterPrefabs[i].name;
-                }
-                else
-                {
-                    characters[i].GetComponent<SpriteRenderer>().color = Color.black;
-                    characters[i].GetComponent<Animator>().enabled = false;
-                }
+                characters[i].GetComponent<SpriteRenderer>().color = Color.white;
+                characters[i].GetComponent<Animator>().enabled = true;
+                selectedCharacter = characterPrefabs[i];
+                characterName.text = characterPrefabs[i].name;
+            }
+            else
+            {
+                characters[i].GetComponent<SpriteRenderer>().color = Color.black;
+                characters[i].GetComponent<Animator>().enabled = false;
             }
         }
+
+        selectedCharacter.tag = "Player";
+    }
 } 
 
 
